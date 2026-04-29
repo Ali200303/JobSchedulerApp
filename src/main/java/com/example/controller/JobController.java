@@ -59,7 +59,7 @@ public class JobController {
         Job job = jobService.createJob(name, description, frequency, interval);
 
         // appel de la méthode pour générer les instances selon l’intervalle
-        jobService.generateJobInstances(job.getId(), start, end, interval);
+        jobService.generateJobInstances(job.getId(), start, end);
 
         return "redirect:/jobs";
     }

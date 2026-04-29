@@ -33,30 +33,13 @@ public class JobService {
     public Job createJob(String name, String description, String frequency, Integer interval) {
 
         Job job = new Job(name, description, frequency, interval);
-        Job savedJob = jobRepository.save(job);
+        return jobRepository.save(job);
 
-        // Créer les instances si fréquence = MINUTES
-        if (interval != null && interval > 0) {
-
-            LocalDateTime now = LocalDateTime.now();
-            List<JobInstance> instances = new ArrayList<>();
-            for (int i = 0; i <= interval; i++) {
-
-                LocalDateTime scheduledTime = now.plusMinutes(i);
-                JobInstance instance = new JobInstance(job, scheduledTime);
-                instances.add(instance);
-            }
-            jobInstanceRepository.saveAll(instances);
-
-        }
-
-        return savedJob;
     }
 
     public void deleteJob(Long id) {
 
         jobRepository.deleteById(id);
-        // supprimer aussi les instances liées
         jobInstanceRepository.deleteByJob_Id(id);
     }
 
@@ -114,39 +97,57 @@ public class JobService {
         });
     }
 
-    public List<JobInstance> generateJobInstances(Long jobId, LocalDateTime start, LocalDateTime end, int intervalMinutes) {
-        Job job = jobRepository.findById(jobId).orElseThrow(() -> new RuntimeException("Job not found"));
+    public List<JobInstance> generateJobInstances(Long jobId,
+                                                  LocalDateTime start,
+                                                  LocalDateTime end) {
 
-        // vérifier s’il existe déjà des instances dans cet intervalle pour éviter les doublons
-        List<JobInstance> existing = jobInstanceRepository.findByJob_IdAndScheduledTimeBetween(jobId, start, end);
-        if (!existing.isEmpty()) return existing;
+        Job job = jobRepository.findById(jobId)
+                .orElseThrow(() -> new RuntimeException("Job not found"));
+
+        int interval = job.getInterval();
+
+        if (interval <= 0) {
+            throw new IllegalArgumentException("Interval must be > 0");
+        }
+
+        if (start.isAfter(end)) {
+            throw new IllegalArgumentException("Start must be before end");
+        }
+
+        List<JobInstance> existing =
+                jobInstanceRepository.findByJob_IdAndScheduledTimeBetween(jobId, start, end);
+
+        if (!existing.isEmpty()) {
+            return existing;
+        }
 
         List<JobInstance> newInstances = new ArrayList<>();
         LocalDateTime current = start;
+
         while (!current.isAfter(end)) {
-            JobInstance instance = new JobInstance(job, current);
-            newInstances.add(instance);
+            newInstances.add(new JobInstance(job, current));
+
             switch (job.getFrequency().toUpperCase()) {
 
                 case "MINUTES":
-                    current = current.plusMinutes(intervalMinutes);
+                    current = current.plusMinutes(interval);
                     break;
 
                 case "HOURS":
-                    current = current.plusHours(intervalMinutes);
+                    current = current.plusHours(interval);
                     break;
 
                 case "DAYS":
-                    current = current.plusDays(intervalMinutes);
+                    current = current.plusDays(interval);
                     break;
 
                 default:
-                    throw new RuntimeException("Unknown frequency");
+                    throw new RuntimeException("Unknown frequency: " + job.getFrequency());
             }
         }
 
         jobInstanceRepository.saveAll(newInstances);
-        return jobInstanceRepository.findByJob_IdAndScheduledTimeBetween(jobId, start, end);
+        return newInstances;
     }
 
 

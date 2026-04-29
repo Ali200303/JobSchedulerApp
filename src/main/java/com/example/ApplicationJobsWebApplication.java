@@ -10,5 +10,6 @@ public class ApplicationJobsWebApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(ApplicationJobsWebApplication.class, args);
+
     }
 }
