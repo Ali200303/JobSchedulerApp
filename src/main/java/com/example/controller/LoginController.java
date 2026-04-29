@@ -16,6 +16,7 @@ public class LoginController {
 
     @GetMapping("/login")
     public String showLoginPage() {
+
         return "login";
     }
 
@@ -26,9 +27,11 @@ public class LoginController {
                                Model model) {
 
         if (VALID_USERNAME.equals(username) && VALID_PASSWORD.equals(password)) {
+
             session.setAttribute("loggedInUser", username);
             return "redirect:/jobs";
         } else {
+
             model.addAttribute("error", "Invalid username or password");
             return "login";
         }
@@ -36,6 +39,7 @@ public class LoginController {
 
     @GetMapping("/logout")
     public String logout(HttpSession session) {
+
         session.invalidate();
         return "redirect:/login";
     }

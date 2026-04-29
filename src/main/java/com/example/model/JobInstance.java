@@ -21,6 +21,7 @@ public class JobInstance {
     public JobInstance() {}
 
     public JobInstance(Job job, LocalDateTime scheduledTime) {
+
         this.job = job;
         this.scheduledTime = scheduledTime;
         this.status = "ACTIVE";

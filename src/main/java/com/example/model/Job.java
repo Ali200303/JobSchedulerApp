@@ -21,6 +21,7 @@ public class Job {
     public Job() {}
 
     public Job(String name, String description, String frequency, Integer interval) {
+
         this.name = name;
         this.description = description;
         this.frequency = frequency;
@@ -30,6 +31,7 @@ public class Job {
     }
 
     public String getFrequencyDescription() {
+
         String unit = frequency.toLowerCase();
         if (intervalMinutes == 1) {
             unit = unit.substring(0, unit.length() - 1);

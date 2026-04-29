@@ -17,6 +17,7 @@ public class JobInstanceService {
     private final JobRepository jobRepository;
 
     public JobInstanceService(JobInstanceRepository repository, JobRepository jobRepository) {
+
         this.repository = repository;
         this.jobRepository = jobRepository;
     }
@@ -24,10 +25,13 @@ public class JobInstanceService {
 
 
     public JobInstance skipInstance(Long id) {
+
         JobInstance instance = repository.findById(id).orElse(null);
         if (instance != null) {
+
             LocalDateTime now = LocalDateTime.now();
             if ("ACTIVE".equals(instance.getStatus()) && !now.isAfter(instance.getScheduledTime())) {
+
                 instance.setStatus("SKIPPED");
                 repository.save(instance);
             }
@@ -37,25 +41,28 @@ public class JobInstanceService {
 
 
     public List<JobInstance> getInstancesForJob(Long jobId) {
+
         List<JobInstance> instances = repository.findByJob_IdOrderByScheduledTimeAsc(jobId);
         LocalDateTime now = LocalDateTime.now();
 
         System.out.println("Current time: " + now);
 
         for (JobInstance instance : instances) {
+
             System.out.println("Instance " + instance.getId() +
                     " - Scheduled: " + instance.getScheduledTime() +
                     " - Status: " + instance.getStatus() +
                     " - Is after now: " + instance.getScheduledTime().isAfter(now));
 
             if ("ACTIVE".equals(instance.getStatus())) {
+
                 if (instance.getScheduledTime().isBefore(now) || instance.getScheduledTime().isEqual(now)) {
+
                     System.out.println("Marking instance " + instance.getId() + " as DONE");
                     instance.setStatus("DONE");
                     repository.save(instance);
                 }
             }
-            // SKIPPED instances remain SKIPPED even if time has passed
         }
 
         return instances;
@@ -63,10 +70,10 @@ public class JobInstanceService {
 
 
     public JobInstance restoreInstance(Long id) {
+
         JobInstance instance = repository.findById(id).orElse(null);
         if (instance != null) {
             LocalDateTime now = LocalDateTime.now();
-            // Restaurer seulement si SKIPPED et l'heure n'est pas encore passée
             if ("SKIPPED".equals(instance.getStatus()) && !now.isAfter(instance.getScheduledTime())) {
                 instance.setStatus("ACTIVE");
                 repository.save(instance);
@@ -76,6 +83,7 @@ public class JobInstanceService {
     }
 
     public String getJobName(Long jobId) {
+
         Job job = jobRepository.findById(jobId)
                 .orElseThrow(() -> new RuntimeException("Job not found"));
         return job.getName();
