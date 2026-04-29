@@ -91,21 +91,30 @@
             <td th:text="${#temporals.format(instance.scheduledTime, 'yyyy-MM-dd HH:mm')}"></td>
             <td th:text="${instance.status}"></td>
             <td>
-                <!-- Skip button if ACTIVE -->
                 <form th:if="${instance.status == 'ACTIVE'}" th:action="@{'/jobs/skip/' + ${instance.id}}" method="post" style="display:inline;">
                     <input type="hidden" name="jobId" th:value="${jobId}" />
                     <button type="submit" class="btn-small btn-skip">Skip</button>
                 </form>
 
-                <!-- Restore button if SKIPPED -->
                 <form th:if="${instance.status == 'SKIPPED'}" th:action="@{'/jobs/restore/' + ${instance.id}}" method="post" style="display:inline;">
                     <input type="hidden" name="jobId" th:value="${jobId}" />
                     <button type="submit" class="btn-small btn-restore">Restore</button>
                 </form>
 
-                <!-- Disabled if DONE -->
                 <button th:if="${instance.status != 'ACTIVE' and instance.status != 'SKIPPED'}"
                         class="btn-small btn-disabled" disabled>Expired</button>
+
+                <form th:action="@{'/jobs/' + ${job.id} + '/delete'}"
+                      method="post"
+                      style="display:inline;"
+                      onsubmit="return confirm('Are you sure you want to delete this job?');">
+
+                    <button type="submit"
+                            class="btn-small btn-skip"
+                            style="background:#d9534f;">
+                        Delete
+                    </button>
+                </form>
             </td>
         </tr>
         </tbody>
