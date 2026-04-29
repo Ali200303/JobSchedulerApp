@@ -7,7 +7,6 @@ import com.example.repository.JobRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -17,76 +16,87 @@ public class JobInstanceService {
     private final JobRepository jobRepository;
 
     public JobInstanceService(JobInstanceRepository repository, JobRepository jobRepository) {
-
         this.repository = repository;
         this.jobRepository = jobRepository;
     }
 
-
-
-    public JobInstance skipInstance(Long id) {
-
-        JobInstance instance = repository.findById(id).orElse(null);
-        if (instance != null) {
-
-            LocalDateTime now = LocalDateTime.now();
-            if ("ACTIVE".equals(instance.getStatus()) && !now.isAfter(instance.getScheduledTime())) {
-
-                instance.setStatus("SKIPPED");
-                repository.save(instance);
-            }
-        }
-        return instance;
-    }
-
-
+    /**
+     * Récupère toutes les instances d'un job et met à jour leur statut
+     */
     public List<JobInstance> getInstancesForJob(Long jobId) {
-
         List<JobInstance> instances = repository.findByJob_IdOrderByScheduledTimeAsc(jobId);
-        LocalDateTime now = LocalDateTime.now();
-
-        System.out.println("Current time: " + now);
-
-        for (JobInstance instance : instances) {
-
-            System.out.println("Instance " + instance.getId() +
-                    " - Scheduled: " + instance.getScheduledTime() +
-                    " - Status: " + instance.getStatus() +
-                    " - Is after now: " + instance.getScheduledTime().isAfter(now));
-
-            if ("ACTIVE".equals(instance.getStatus())) {
-
-                if (instance.getScheduledTime().isBefore(now) || instance.getScheduledTime().isEqual(now)) {
-
-                    System.out.println("Marking instance " + instance.getId() + " as DONE");
-                    instance.setStatus("DONE");
-                    repository.save(instance);
-                }
-            }
-        }
-
+        updateExpiredInstances(instances);
         return instances;
     }
 
+    /**
+     * Marque une instance comme SKIPPED
+     */
+    public void skipInstance(Long instanceId) {
+        updateInstanceStatus(instanceId, "ACTIVE", "SKIPPED");
+    }
 
-    public JobInstance restoreInstance(Long id) {
+    /**
+     * Restaure une instance SKIPPED vers ACTIVE
+     */
+    public void restoreInstance(Long instanceId) {
+        updateInstanceStatus(instanceId, "SKIPPED", "ACTIVE");
+    }
 
-        JobInstance instance = repository.findById(id).orElse(null);
-        if (instance != null) {
+    /**
+     * Supprime une instance
+     */
+    public void deleteInstance(Long instanceId) {
+        repository.deleteById(instanceId);
+    }
+
+    /**
+     * Supprime plusieurs instances
+     */
+    public void deleteInstances(List<Long> instanceIds) {
+        repository.deleteAllById(instanceIds);
+    }
+
+    /**
+     * Récupère un job par son ID
+     */
+    public Job getJobById(Long jobId) {
+        return jobRepository.findById(jobId)
+                .orElseThrow(() -> new RuntimeException("Job not found with id: " + jobId));
+    }
+
+    // ==================== MÉTHODES PRIVÉES ====================
+
+    /**
+     * Met à jour le statut d'une instance (logique commune pour skip/restore)
+     */
+    private void updateInstanceStatus(Long instanceId, String expectedStatus, String newStatus) {
+        repository.findById(instanceId).ifPresent(instance -> {
             LocalDateTime now = LocalDateTime.now();
-            if ("SKIPPED".equals(instance.getStatus()) && !now.isAfter(instance.getScheduledTime())) {
-                instance.setStatus("ACTIVE");
-                repository.save(instance);
+
+            // Vérifier que le statut actuel est celui attendu
+            if (expectedStatus.equals(instance.getStatus())) {
+                // Vérifier que l'instance n'est pas expirée
+                if (!now.isAfter(instance.getScheduledTime())) {
+                    instance.setStatus(newStatus);
+                    repository.save(instance);
+                }
             }
-        }
-        return instance;
+        });
     }
 
-    public String getJobName(Long jobId) {
+    /**
+     * Met à jour les instances expirées (ACTIVE → DONE)
+     */
+    private void updateExpiredInstances(List<JobInstance> instances) {
+        LocalDateTime now = LocalDateTime.now();
 
-        Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new RuntimeException("Job not found"));
-        return job.getName();
+        instances.stream()
+                .filter(instance -> "ACTIVE".equals(instance.getStatus()))
+                .filter(instance -> !instance.getScheduledTime().isAfter(now))
+                .forEach(instance -> {
+                    instance.setStatus("DONE");
+                    repository.save(instance);
+                });
     }
-
 }
