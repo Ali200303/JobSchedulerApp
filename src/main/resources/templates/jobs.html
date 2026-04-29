@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Scheduler - Jobs</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }
+        .header { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { margin: 0; color: #333; }
+        .user-info { display: flex; align-items: center; gap: 15px; }
+        .user-info span { color: #666; }
+        .logout-btn { padding: 8px 15px; background: #ff4444; color: white; text-decoration: none; border-radius: 5px; transition: background-color 0.3s; }
+        .logout-btn:hover { background: #cc3333; }
+        .actions { margin-bottom: 30px; }
+        .create-job-btn { padding: 12px 25px; background: #4CAF50; color: white; text-decoration: none; border-radius: 5px; font-size: 16px; transition: background-color 0.3s; }
+        .create-job-btn:hover { background: #45a049; }
+        .jobs-container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .jobs-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .jobs-table th, .jobs-table td { padding: 15px; text-align: left; border-bottom: 1px solid #ddd; }
+        .jobs-table th { background-color: #f8f9fa; font-weight: bold; color: #333; }
+        .status-badge { padding: 5px 10px; border-radius: 15px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
+        .status-active { background: #e8f5e8; color: #2e7d32; }
+        .status-skipped { background: #fff3cd; color: #856404; }
+        .status-done { background: #f8d7da; color: #721c24; }
+        .action-buttons { display: flex; gap: 10px; }
+        .btn-small { padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px; display: inline-block; }
+        .btn-skip { background: #ff9800; color: white; }
+        .btn-restore { background: #4caf50; color: white; }
+        .btn-disabled { background: #9e9e9e; color: white; cursor: not-allowed; }
+        .no-jobs { text-align: center; padding: 40px; color: #666; }
+        .frequency-info { font-size: 14px; color: #666; }
+    </style>
+</head>
+<body>
+<div class="header">
+    <h1>Job Scheduler</h1>
+    <div class="user-info">
+        <span>Welcome, <strong th:text="${username}"></strong></span>
+        <a href="/logout" class="logout-btn" id="logoutBtn">Logout</a>
+    </div>
+</div>
+
+<div class="actions">
+    <a href="/jobs/create" class="create-job-btn" id="createJobBtn">
+        + Create New Job
+    </a>
+</div>
+
+<div class="jobs-container">
+    <h2>Scheduled Jobs</h2>
+
+    <div th:if="${#lists.isEmpty(jobs)}" class="no-jobs">
+        <p>No jobs scheduled yet. Click "Create New Job" to get started!</p>
+    </div>
+
+    <table th:if="${!#lists.isEmpty(jobs)}" class="jobs-table" id="jobsTable">
+        <thead>
+        <tr>
+            <th>Job Name</th>
+            <th>Description</th>
+            <th>Frequency</th>
+            <th>Status</th>
+            <th>Created</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="job : ${jobs}" th:id="'job-' + ${job.id}">
+            <td>
+                <a th:href="@{'/jobs/' + ${job.id} + '/planning'}" th:text="${job.name}"></a>
+            </td>
+
+            <td th:text="${job.description}"></td>
+            <td><span class="frequency-info" th:text="${job.frequencyDescription}"></span></td>
+            <td><span class="status-badge"
+                      th:classappend="'status-' + ${#strings.toLowerCase(job.status)}"
+                      th:text="${job.status}"></span></td>
+            <td th:text="${#temporals.format(job.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
+            <td>
+                <a th:href="@{'/jobs/' + ${job.id} + '/planning'}" class="btn-small btn-disabled">View Planning</a>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+</body>
+</html>
