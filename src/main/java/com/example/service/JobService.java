@@ -5,6 +5,7 @@ import com.example.model.JobInstance;
 import com.example.repository.JobRepository;
 import com.example.repository.JobInstanceRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -37,10 +38,11 @@ public class JobService {
 
     }
 
+    @Transactional
     public void deleteJob(Long id) {
 
-        jobRepository.deleteById(id);
         jobInstanceRepository.deleteByJob_Id(id);
+        jobRepository.deleteById(id);
     }
 
     public Job updateJobStatus(Long id, String status) {
@@ -87,7 +89,6 @@ public class JobService {
 
         jobInstanceRepository.findById(instanceId).ifPresent(instance -> {
             LocalDateTime now = LocalDateTime.now();
-            // restaurer seulement si le temps prévu n'est pas passé
             if (!now.isAfter(instance.getScheduledTime()) &&
                     ("SKIPPED".equals(instance.getStatus()) || "ACTIVE".equals(instance.getStatus()))) {
 

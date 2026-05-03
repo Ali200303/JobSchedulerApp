@@ -155,31 +155,31 @@
                 <td th:text="${#temporals.format(instance.scheduledTime, 'yyyy-MM-dd HH:mm')}"></td>
                 <td th:text="${instance.status}"></td>
                 <td onclick="event.stopPropagation();">
-                    <!-- Skip button -->
                     <form th:if="${instance.status == 'ACTIVE'}"
                           th:action="@{'/jobs/' + ${jobId} + '/skip/' + ${instance.id}}"
                           method="post"
-                          style="display:inline;">
+                          style="display:inline;"
+                          onclick="event.stopPropagation();">
                         <button type="submit" class="btn-small btn-skip">Skip</button>
                     </form>
 
-                    <!-- Restore button -->
                     <form th:if="${instance.status == 'SKIPPED'}"
                           th:action="@{'/jobs/' + ${jobId} + '/restore/' + ${instance.id}}"
                           method="post"
-                          style="display:inline;">
+                          style="display:inline;"
+                          onclick="event.stopPropagation();">
                         <button type="submit" class="btn-small btn-restore">Restore</button>
                     </form>
 
-                    <!-- Disabled for DONE -->
                     <button th:if="${instance.status == 'DONE'}"
-                            class="btn-small btn-disabled" disabled>Expired</button>
+                            class="btn-small btn-disabled"
+                            disabled
+                            onclick="event.stopPropagation();">Expired</button>
                 </td>
             </tr>
             </tbody>
         </table>
 
-        <!-- Hidden inputs pour les IDs sélectionnés -->
         <div id="selectedInstances"></div>
     </form>
 </div>
@@ -188,21 +188,22 @@
     let selectedIds = new Set();
 
     function toggleSelection(row) {
+
         const status = row.getAttribute('data-status');
 
-        // Ne pas permettre la sélection des SKIPPED
         if (status === 'SKIPPED') {
+
             return;
         }
 
         const instanceId = row.getAttribute('data-instance-id');
 
         if (row.classList.contains('selected')) {
-            // Désélectionner
+
             row.classList.remove('selected');
             selectedIds.delete(instanceId);
         } else {
-            // Sélectionner
+
             row.classList.add('selected');
             selectedIds.add(instanceId);
         }
@@ -211,19 +212,18 @@
     }
 
     function updateDeleteButton() {
+
         const deleteBtn = document.getElementById('deleteBtn');
         const selectedCount = document.getElementById('selectedCount');
         const selectedInstancesDiv = document.getElementById('selectedInstances');
 
-        // Mettre à jour le compteur
         selectedCount.textContent = selectedIds.size;
 
-        // Activer/désactiver le bouton
         deleteBtn.disabled = selectedIds.size === 0;
 
-        // Créer les inputs cachés pour le formulaire
         selectedInstancesDiv.innerHTML = '';
         selectedIds.forEach(id => {
+
             const input = document.createElement('input');
             input.type = 'hidden';
             input.name = 'instanceIds';
