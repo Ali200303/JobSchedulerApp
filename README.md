@@ -52,3 +52,10 @@ Feature: Job scheduling
     Given a job with frequency "MINUTES" and interval "5"
     When I generate job instances between "2026-04-28T10:00" and "2026-04-28T10:30"
     Then multiple job instances should be created every 5 minutes
+```
+## ▶️ Run the Project
+
+```bash
+git clone https://github.com/Ali200303/JobSchedulerApp.git
+cd JobSchedulerApp
+mvn spring-boot:run
