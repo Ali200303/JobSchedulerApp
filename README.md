@@ -1,36 +1,49 @@
-# 📅 Job Scheduler Web Application
+# 📅 Job Scheduler Application
 
-This project is a **Spring Boot web application** developed as a practice project to learn and apply **Cucumber (BDD testing)**, along with core backend concepts such as scheduling, job management, and instance tracking.
+A full-stack web application built with **Spring Boot** that allows users to create, manage, and track scheduled jobs with automated instance generation and state management.
 
 ---
 
-## 🚀 Features
+## 🚀 Tech Stack
 
-- 🔐 Simple login system (session-based authentication)
-- 📋 Create and manage jobs
+- **Backend:** Java, Spring Boot
+- **Frontend:** Thymeleaf
+- **Database:** H2
+- **Testing:** Cucumber (BDD), Selenium
+- **Build Tool:** Maven
+
+---
+
+## ✨ Key Features
+
+- 🔐 Session-based authentication system
+- 📋 Create, view, and delete jobs
 - ⏱️ Define job frequency (minutes, hours, days)
-- 🧩 Automatic generation of job instances over a time range
-- ✔️ Track job instances status:
-    - ACTIVE
-    - DONE
-    - SKIPPED
-- 🔄 Restore skipped instances (if still valid)
-- 🗑️ Delete jobs and their related instances
-- 📊 View job execution planning per job
+- 🧩 Automatic generation of job instances over a defined time range
+- ✔️ Manage job instance states:
+  - ACTIVE
+  - DONE
+  - SKIPPED
+- 🔄 Restore skipped instances (when still valid)
+- 🗑️ Cascade deletion of jobs and related instances
+- 📊 Visualize job execution planning
 
 ---
 
-## 🧪 Testing (Cucumber)
+## 🧠 Highlights
 
-This project was built to practice **Behavior Driven Development (BDD)** using Cucumber.
+- Designed a **modular MVC architecture** (Controller / Service / Repository)
+- Implemented **business logic with state transitions and time validation**
+- Built **end-to-end automated tests** using BDD (Cucumber) and Selenium
+- Focused on **code structure, maintainability, and reliability**
 
-### Goals:
-- Write human-readable test scenarios
-- Validate rules (job scheduling logic)
-- Test job instance generation and status transitions
-- Improve code reliability and structure
+---
 
-### Example Feature:
+## 🧪 Testing (BDD with Cucumber)
+
+Behavior Driven Development (BDD) is used to validate application behavior through human-readable scenarios.
+
+### Example Scenario
 
 ```gherkin
 Feature: Job scheduling
