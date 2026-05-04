@@ -59,3 +59,6 @@ Feature: Job scheduling
 git clone https://github.com/Ali200303/JobSchedulerApp.git
 cd JobSchedulerApp
 mvn spring-boot:run
+```
+Then open your browser at:  
+http://localhost:8080
