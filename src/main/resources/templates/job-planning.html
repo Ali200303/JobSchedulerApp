@@ -125,7 +125,10 @@
 <div class="container">
     <p class="info-text">💡 Cliquez sur les lignes pour sélectionner les instances à supprimer (SKIPPED ne peut pas être sélectionné)</p>
 
-    <form id="deleteForm" th:action="@{'/jobs/' + ${jobId} + '/instances/delete-selected'}" method="post">
+    <form id="deleteForm"
+          th:action="@{'/jobs/' + ${jobId} + '/instances/delete-selected'}"
+          method="post">
+
         <div class="delete-section">
             <button type="submit"
                     class="delete-selected-btn"
@@ -134,54 +137,75 @@
                     onclick="return confirm('Are you sure you want to delete the selected instances?');">
                 🗑️ Delete Selected Instances (<span id="selectedCount">0</span>)
             </button>
+
+            <div id="selectedInstances"></div>
         </div>
 
-        <table>
-            <thead>
-            <tr>
-                <th>Heure prévue</th>
-                <th>Status</th>
-                <th>Actions</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr th:each="instance : ${instances}"
-                th:data-instance-id="${instance.id}"
-                th:data-status="${instance.status}"
-                class="instance-row"
-                th:classappend="${instance.status} == 'ACTIVE' ? 'status-active' : (${instance.status} == 'SKIPPED' ? 'status-skipped disabled' : 'status-done')"
-                onclick="toggleSelection(this)">
-
-                <td th:text="${#temporals.format(instance.scheduledTime, 'yyyy-MM-dd HH:mm')}"></td>
-                <td th:text="${instance.status}"></td>
-                <td onclick="event.stopPropagation();">
-                    <form th:if="${instance.status == 'ACTIVE'}"
-                          th:action="@{'/jobs/' + ${jobId} + '/skip/' + ${instance.id}}"
-                          method="post"
-                          style="display:inline;"
-                          onclick="event.stopPropagation();">
-                        <button type="submit" class="btn-small btn-skip">Skip</button>
-                    </form>
-
-                    <form th:if="${instance.status == 'SKIPPED'}"
-                          th:action="@{'/jobs/' + ${jobId} + '/restore/' + ${instance.id}}"
-                          method="post"
-                          style="display:inline;"
-                          onclick="event.stopPropagation();">
-                        <button type="submit" class="btn-small btn-restore">Restore</button>
-                    </form>
-
-                    <button th:if="${instance.status == 'DONE'}"
-                            class="btn-small btn-disabled"
-                            disabled
-                            onclick="event.stopPropagation();">Expired</button>
-                </td>
-            </tr>
-            </tbody>
-        </table>
-
-        <div id="selectedInstances"></div>
     </form>
+
+    <table>
+        <thead>
+        <tr>
+            <th>Heure prévue</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+
+        <tbody>
+
+        <tr th:each="instance : ${instances}"
+            th:data-instance-id="${instance.id}"
+            th:data-status="${instance.status}"
+            class="instance-row"
+            th:classappend="${instance.status} == 'ACTIVE'
+            ? 'status-active'
+            : (${instance.status} == 'SKIPPED'
+                ? 'status-skipped disabled'
+                : 'status-done')"
+            onclick="toggleSelection(this)">
+
+            <td th:text="${#temporals.format(instance.scheduledTime, 'yyyy-MM-dd HH:mm')}"></td>
+
+            <td th:text="${instance.status}"></td>
+
+            <td onclick="event.stopPropagation();">
+
+                <form th:if="${instance.status == 'ACTIVE'}"
+                      th:action="@{'/jobs/' + ${jobId} + '/skip/' + ${instance.id}}"
+                      method="post"
+                      style="display:inline;">
+
+                    <button type="submit"
+                            class="btn-small btn-skip">
+                        Skip
+                    </button>
+                </form>
+
+                <form th:if="${instance.status == 'SKIPPED'}"
+                      th:action="@{'/jobs/' + ${jobId} + '/restore/' + ${instance.id}}"
+                      method="post"
+                      style="display:inline;">
+
+                    <button type="submit"
+                            class="btn-small btn-restore">
+                        Restore
+                    </button>
+                </form>
+
+                <button th:if="${instance.status == 'DONE'}"
+                        type="button"
+                        class="btn-small btn-disabled"
+                        disabled>
+                    Expired
+                </button>
+
+            </td>
+
+        </tr>
+
+        </tbody>
+    </table>
 </div>
 
 <script>

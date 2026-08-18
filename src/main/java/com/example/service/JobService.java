@@ -2,15 +2,14 @@ package com.example.service;
 
 import com.example.model.Job;
 import com.example.model.JobInstance;
-import com.example.repository.JobRepository;
 import com.example.repository.JobInstanceRepository;
+import com.example.repository.JobRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class JobService {
@@ -18,7 +17,8 @@ public class JobService {
     private final JobRepository jobRepository;
     private final JobInstanceRepository jobInstanceRepository;
 
-    public JobService(JobRepository jobRepository, JobInstanceRepository jobInstanceRepository) {
+    public JobService(JobRepository jobRepository,
+                      JobInstanceRepository jobInstanceRepository) {
         this.jobRepository = jobRepository;
         this.jobInstanceRepository = jobInstanceRepository;
     }
@@ -28,128 +28,197 @@ public class JobService {
     }
 
     public Job getJobById(Long id) {
-        return jobRepository.findById(id).orElse(null);
+        return jobRepository.findById(id)
+                .orElseThrow(() ->
+                        new IllegalArgumentException("Job not found: " + id));
     }
 
-    public Job createJob(String name, String description, String frequency, Integer interval) {
+    public Job createJob(String name,
+                         String description,
+                         String frequency,
+                         Integer interval) {
 
-        Job job = new Job(name, description, frequency, interval);
+        validateJob(name, frequency, interval);
+
+        Job job = new Job(
+                name.trim(),
+                description != null ? description.trim() : "",
+                frequency.toUpperCase(),
+                interval
+        );
+
         return jobRepository.save(job);
-
     }
 
     @Transactional
     public void deleteJob(Long id) {
 
+        if (!jobRepository.existsById(id)) {
+            throw new IllegalArgumentException("Job not found: " + id);
+        }
+
         jobInstanceRepository.deleteByJob_Id(id);
         jobRepository.deleteById(id);
     }
 
+    @Transactional
     public Job updateJobStatus(Long id, String status) {
 
-        Optional<Job> optionalJob = jobRepository.findById(id);
-        if (optionalJob.isPresent()) {
-            Job job = optionalJob.get();
-            job.setStatus(status);
-            return jobRepository.save(job);
+        Job job = getJobById(id);
+
+        if (!List.of("ACTIVE", "PAUSED", "STOPPED")
+                .contains(status.toUpperCase())) {
+            throw new IllegalArgumentException(
+                    "Invalid job status: " + status
+            );
         }
-        return null;
+
+        job.setStatus(status.toUpperCase());
+
+        return job;
+    }
+
+    @Transactional
+    public List<JobInstance> generateJobInstances(
+            Long jobId,
+            LocalDateTime start,
+            LocalDateTime end) {
+
+        Job job = getJobById(jobId);
+        validateSchedule(job, start, end);
+
+        List<JobInstance> existing =
+                jobInstanceRepository
+                        .findByJob_IdAndScheduledTimeBetween(jobId, start, end);
+
+        List<LocalDateTime> existingTimes = existing.stream()
+                .map(JobInstance::getScheduledTime)
+                .toList();
+
+        List<JobInstance> newInstances = new ArrayList<>();
+
+        LocalDateTime current = start;
+
+        while (!current.isAfter(end)) {
+
+            if (!existingTimes.contains(current)) {
+                newInstances.add(new JobInstance(job, current));
+            }
+
+            current = calculateNextExecution(
+                    current,
+                    job.getFrequency(),
+                    job.getInterval()
+            );
+        }
+
+        if (!newInstances.isEmpty()) {
+            jobInstanceRepository.saveAll(newInstances);
+        }
+
+        return jobInstanceRepository
+                .findByJob_IdAndScheduledTimeBetween(jobId, start, end);
+    }
+
+    private LocalDateTime calculateNextExecution(
+            LocalDateTime current,
+            String frequency,
+            int interval) {
+
+        return switch (frequency.toUpperCase()) {
+            case "MINUTES" ->
+                    current.plusMinutes(interval);
+
+            case "HOURS" ->
+                    current.plusHours(interval);
+
+            case "DAYS" ->
+                    current.plusDays(interval);
+
+            default ->
+                    throw new IllegalArgumentException(
+                            "Unknown frequency: " + frequency
+                    );
+        };
+    }
+
+    private void validateJob(
+            String name,
+            String frequency,
+            Integer interval) {
+
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Job name cannot be empty"
+            );
+        }
+
+        if (interval == null || interval <= 0) {
+            throw new IllegalArgumentException(
+                    "Interval must be greater than 0"
+            );
+        }
+
+        if (frequency == null ||
+                !List.of("MINUTES", "HOURS", "DAYS")
+                        .contains(frequency.toUpperCase())) {
+
+            throw new IllegalArgumentException(
+                    "Invalid frequency: " + frequency
+            );
+        }
+    }
+
+    private void validateSchedule(
+            Job job,
+            LocalDateTime start,
+            LocalDateTime end) {
+
+        if (start == null || end == null) {
+            throw new IllegalArgumentException(
+                    "Start and end dates are required"
+            );
+        }
+
+        if (start.isAfter(end)) {
+            throw new IllegalArgumentException(
+                    "Start must be before end"
+            );
+        }
+
+        if (job.getInterval() == null ||
+                job.getInterval() <= 0) {
+
+            throw new IllegalArgumentException(
+                    "Interval must be greater than 0"
+            );
+        }
     }
 
     public void initializeSampleData() {
 
         if (jobRepository.count() == 0) {
 
-            createJob("Backup Database", "Daily database backup", "HOURS", 24);
-            createJob("Send Reports", "Email weekly reports", "DAYS", 7);
-            createJob("Clean Temp Files", "Clear temporary files", "MINUTES", 5); // exemple 5 minutes
+            createJob(
+                    "Backup Database",
+                    "Daily database backup",
+                    "HOURS",
+                    24
+            );
+
+            createJob(
+                    "Send Reports",
+                    "Email weekly reports",
+                    "DAYS",
+                    7
+            );
+
+            createJob(
+                    "Clean Temp Files",
+                    "Clear temporary files",
+                    "MINUTES",
+                    5
+            );
         }
     }
-
-    public List<JobInstance> getJobInstances(Long jobId) {
-
-        return jobInstanceRepository.findByJob_IdOrderByScheduledTimeAsc(jobId);
-    }
-
-
-
-    public void skipInstance(Long instanceId) {
-
-        jobInstanceRepository.findById(instanceId).ifPresent(instance -> {
-
-            if ("ACTIVE".equals(instance.getStatus())) {
-
-                instance.setStatus("SKIPPED");
-                jobInstanceRepository.save(instance);
-            }
-        });
-    }
-
-    public void restoreInstance(Long instanceId) {
-
-        jobInstanceRepository.findById(instanceId).ifPresent(instance -> {
-            LocalDateTime now = LocalDateTime.now();
-            if (!now.isAfter(instance.getScheduledTime()) &&
-                    ("SKIPPED".equals(instance.getStatus()) || "ACTIVE".equals(instance.getStatus()))) {
-
-                instance.setStatus("ACTIVE");
-                jobInstanceRepository.save(instance);
-            }
-        });
-    }
-
-    public List<JobInstance> generateJobInstances(Long jobId,
-                                                  LocalDateTime start,
-                                                  LocalDateTime end) {
-
-        Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new RuntimeException("Job not found"));
-
-        int interval = job.getInterval();
-
-        if (interval <= 0) {
-            throw new IllegalArgumentException("Interval must be > 0");
-        }
-
-        if (start.isAfter(end)) {
-            throw new IllegalArgumentException("Start must be before end");
-        }
-
-        List<JobInstance> existing =
-                jobInstanceRepository.findByJob_IdAndScheduledTimeBetween(jobId, start, end);
-
-        if (!existing.isEmpty()) {
-            return existing;
-        }
-
-        List<JobInstance> newInstances = new ArrayList<>();
-        LocalDateTime current = start;
-
-        while (!current.isAfter(end)) {
-            newInstances.add(new JobInstance(job, current));
-
-            switch (job.getFrequency().toUpperCase()) {
-
-                case "MINUTES":
-                    current = current.plusMinutes(interval);
-                    break;
-
-                case "HOURS":
-                    current = current.plusHours(interval);
-                    break;
-
-                case "DAYS":
-                    current = current.plusDays(interval);
-                    break;
-
-                default:
-                    throw new RuntimeException("Unknown frequency: " + job.getFrequency());
-            }
-        }
-
-        jobInstanceRepository.saveAll(newInstances);
-        return newInstances;
-    }
-
-
 }
