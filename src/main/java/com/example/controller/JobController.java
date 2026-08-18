@@ -27,8 +27,6 @@ public class JobController {
         this.jobInstanceService = jobInstanceService;
     }
 
-    // ==================== PAGES ====================
-
     @GetMapping
     public String showJobsPage(HttpSession session, Model model) {
 
@@ -63,8 +61,6 @@ public class JobController {
         return "job-planning";
     }
 
-    // ==================== JOB ACTIONS ====================
-
     @PostMapping("/create")
     public String createJob(@RequestParam String name,
                             @RequestParam String description,
@@ -79,8 +75,14 @@ public class JobController {
         LocalDateTime start = LocalDateTime.parse(startTime);
         LocalDateTime end = LocalDateTime.parse(endTime);
 
-        Job job = jobService.createJob(name, description, frequency, interval);
-        jobService.generateJobInstances(job.getId(), start, end);
+        jobService.createScheduledJob(
+                name,
+                description,
+                frequency,
+                interval,
+                start,
+                end
+        );
 
         return "redirect:/jobs";
     }
@@ -102,8 +104,6 @@ public class JobController {
         jobService.updateJobStatus(id, status);
         return "redirect:/jobs";
     }
-
-    // ==================== INSTANCE ACTIONS ====================
 
     @PostMapping("/{jobId}/skip/{instanceId}")
     public String skipJobInstance(@PathVariable Long jobId,
@@ -149,8 +149,6 @@ public class JobController {
 
         return redirectToPlanning(jobId);
     }
-
-    // ==================== MÉTHODES UTILITAIRES ====================
 
     private boolean isLoggedIn(HttpSession session) {
 

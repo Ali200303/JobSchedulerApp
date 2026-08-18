@@ -87,30 +87,57 @@
             background-color: #f0f0f0 !important;
         }
         .instance-row.selected {
-            background-color: #d1ecf1 !important;
-            border: 2px solid #0c5460;
+            outline: 3px solid #007bff;
+            outline-offset: -3px;
+            font-weight: bold;
         }
         .instance-row.disabled {
             cursor: not-allowed;
             opacity: 0.6;
         }
-        .status-active { background: #e8f5e8; color: #2e7d32; }
-        .status-skipped { background: #fff3cd; color: #856404; }
-        .status-done { background: #f8d7da; color: #721c24; }
-        .btn-small {
-            padding: 5px 10px;
-            border: none;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 12px;
+        .action-section {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
         }
-        .btn-skip { background: #ff9800; color: white; }
-        .btn-restore { background: #4caf50; color: white; }
-        .btn-disabled { background: #9e9e9e; color: white; cursor: not-allowed; }
+
+        .instance-action-btn {
+            padding: 10px 20px;
+            background: #ff9800;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .instance-action-btn.restore {
+            background: #4caf50;
+        }
+
+        .instance-action-btn:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
         .info-text {
             font-size: 14px;
             color: #666;
             margin-bottom: 10px;
+        }
+        .status-active {
+            background-color: #e8f5e8 !important;
+            color: #2e7d32;
+        }
+
+        .status-skipped {
+            background-color: #fff3cd !important;
+            color: #856404;
+        }
+
+        .status-done {
+            background-color: #f8d7da !important;
+            color: #721c24;
         }
     </style>
 </head>
@@ -123,32 +150,49 @@
 </div>
 
 <div class="container">
-    <p class="info-text">💡 Cliquez sur les lignes pour sélectionner les instances à supprimer (SKIPPED ne peut pas être sélectionné)</p>
 
-    <form id="deleteForm"
-          th:action="@{'/jobs/' + ${jobId} + '/instances/delete-selected'}"
-          method="post">
+    <p class="info-text">
+        💡 Select instances to delete them.
+        Select one valid ACTIVE or SKIPPED instance to Skip/Restore it.
+    </p>
 
-        <div class="delete-section">
+    <div class="action-section">
+
+        <form id="instanceActionForm" method="post">
+            <button type="submit"
+                    class="instance-action-btn"
+                    id="instanceActionBtn"
+                    disabled>
+                Skip
+            </button>
+        </form>
+
+        <form id="deleteForm"
+              th:action="@{'/jobs/' + ${jobId} + '/instances/delete-selected'}"
+              method="post">
+
             <button type="submit"
                     class="delete-selected-btn"
                     id="deleteBtn"
                     disabled
                     onclick="return confirm('Are you sure you want to delete the selected instances?');">
-                🗑️ Delete Selected Instances (<span id="selectedCount">0</span>)
+
+                🗑️ Delete Selected Instances
+                (<span id="selectedCount">0</span>)
+
             </button>
 
             <div id="selectedInstances"></div>
-        </div>
+        </form>
 
-    </form>
+    </div>
 
     <table>
         <thead>
         <tr>
+            <th>Instance Name</th>
             <th>Heure prévue</th>
             <th>Status</th>
-            <th>Actions</th>
         </tr>
         </thead>
 
@@ -157,103 +201,148 @@
         <tr th:each="instance : ${instances}"
             th:data-instance-id="${instance.id}"
             th:data-status="${instance.status}"
+            th:data-scheduled-time="${instance.scheduledTime}"
             class="instance-row"
             th:classappend="${instance.status} == 'ACTIVE'
-            ? 'status-active'
-            : (${instance.status} == 'SKIPPED'
-                ? 'status-skipped disabled'
-                : 'status-done')"
+        ? 'status-active'
+        : (${instance.status} == 'SKIPPED'
+            ? 'status-skipped'
+            : 'status-done')"
             onclick="toggleSelection(this)">
 
+            <td th:text="${instance.job.name}"></td>
             <td th:text="${#temporals.format(instance.scheduledTime, 'yyyy-MM-dd HH:mm')}"></td>
 
-            <td th:text="${instance.status}"></td>
-
-            <td onclick="event.stopPropagation();">
-
-                <form th:if="${instance.status == 'ACTIVE'}"
-                      th:action="@{'/jobs/' + ${jobId} + '/skip/' + ${instance.id}}"
-                      method="post"
-                      style="display:inline;">
-
-                    <button type="submit"
-                            class="btn-small btn-skip">
-                        Skip
-                    </button>
-                </form>
-
-                <form th:if="${instance.status == 'SKIPPED'}"
-                      th:action="@{'/jobs/' + ${jobId} + '/restore/' + ${instance.id}}"
-                      method="post"
-                      style="display:inline;">
-
-                    <button type="submit"
-                            class="btn-small btn-restore">
-                        Restore
-                    </button>
-                </form>
-
-                <button th:if="${instance.status == 'DONE'}"
-                        type="button"
-                        class="btn-small btn-disabled"
-                        disabled>
-                    Expired
-                </button>
-
+            <td>
+        <span class="status-label"
+              th:text="${instance.status}">
+        </span>
             </td>
 
         </tr>
 
         </tbody>
     </table>
+
 </div>
 
 <script>
-    let selectedIds = new Set();
+    const selectedIds = new Set();
+
+    let selectedActionInstanceId = null;
+    let selectedActionStatus = null;
+    let selectedActionScheduledTime = null;
 
     function toggleSelection(row) {
 
-        const status = row.getAttribute('data-status');
-
-        if (status === 'SKIPPED') {
-
-            return;
-        }
-
         const instanceId = row.getAttribute('data-instance-id');
+        const status = row.getAttribute('data-status');
+        const scheduledTime = row.getAttribute('data-scheduled-time');
 
         if (row.classList.contains('selected')) {
 
             row.classList.remove('selected');
             selectedIds.delete(instanceId);
+
+            if (selectedActionInstanceId === instanceId) {
+                selectedActionInstanceId = null;
+                selectedActionStatus = null;
+                selectedActionScheduledTime = null;
+            }
+
         } else {
 
             row.classList.add('selected');
             selectedIds.add(instanceId);
-        }
 
+            selectedActionInstanceId = instanceId;
+            selectedActionStatus = status;
+            selectedActionScheduledTime = scheduledTime;
+        }
         updateDeleteButton();
+        updateInstanceActionButton();
     }
 
     function updateDeleteButton() {
 
-        const deleteBtn = document.getElementById('deleteBtn');
-        const selectedCount = document.getElementById('selectedCount');
-        const selectedInstancesDiv = document.getElementById('selectedInstances');
+        const deleteBtn =
+            document.getElementById('deleteBtn');
+
+        const selectedCount =
+            document.getElementById('selectedCount');
+
+        const selectedInstancesDiv =
+            document.getElementById('selectedInstances');
 
         selectedCount.textContent = selectedIds.size;
 
-        deleteBtn.disabled = selectedIds.size === 0;
+        deleteBtn.disabled =
+            selectedIds.size === 0;
 
         selectedInstancesDiv.innerHTML = '';
+
         selectedIds.forEach(id => {
 
-            const input = document.createElement('input');
+            const input =
+                document.createElement('input');
+
             input.type = 'hidden';
             input.name = 'instanceIds';
             input.value = id;
+
             selectedInstancesDiv.appendChild(input);
         });
+    }
+
+    function updateInstanceActionButton() {
+
+        const button =
+            document.getElementById('instanceActionBtn');
+
+        const form =
+            document.getElementById('instanceActionForm');
+
+        button.disabled = true;
+        button.textContent = 'Skip';
+        button.classList.remove('restore');
+
+        if (!selectedActionInstanceId) {
+            return;
+        }
+
+        const now = new Date();
+        const scheduledTime =
+            new Date(selectedActionScheduledTime);
+
+        const isExpired =
+            scheduledTime <= now;
+
+        if (selectedActionStatus === 'ACTIVE' && !isExpired) {
+
+            button.disabled = false;
+            button.textContent = 'Skip';
+
+            form.action =
+                '/jobs/[[${jobId}]]/skip/' +
+                selectedActionInstanceId;
+
+            return;
+        }
+
+        if (selectedActionStatus === 'SKIPPED' && !isExpired) {
+
+            button.disabled = false;
+            button.textContent = 'Restore';
+            button.classList.add('restore');
+
+            form.action =
+                '/jobs/[[${jobId}]]/restore/' +
+                selectedActionInstanceId;
+
+            return;
+        }
+
+        button.disabled = true;
     }
 </script>
 </body>

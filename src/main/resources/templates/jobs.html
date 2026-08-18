@@ -68,27 +68,51 @@
         </thead>
         <tbody>
         <tr th:each="job : ${jobs}" th:id="'job-' + ${job.id}">
+
             <td>
-                <a th:href="@{'/jobs/' + ${job.id} + '/planning'}" th:text="${job.name}"></a>
+                <strong th:text="${job.name}"></strong>
             </td>
+
             <td th:text="${job.description}"></td>
-            <td><span class="frequency-info" th:text="${job.frequencyDescription}"></span></td>
-            <td><span class="status-badge"
-                      th:classappend="'status-' + ${#strings.toLowerCase(job.status)}"
-                      th:text="${job.status}"></span></td>
+
+            <td>
+        <span class="frequency-info"
+              th:text="${job.frequencyDescription}">
+        </span>
+            </td>
+
+            <td>
+        <span class="status-badge"
+              th:classappend="'status-' + ${#strings.toLowerCase(job.status)}"
+              th:text="${job.status}">
+        </span>
+            </td>
+
             <td th:text="${#temporals.format(job.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
+
             <td>
                 <div class="action-buttons">
-                    <a th:href="@{'/jobs/' + ${job.id} + '/planning'}" class="btn-small btn-view">View Planning</a>
+
+                    <a th:href="@{'/jobs/' + ${job.id} + '/planning'}"
+                       class="btn-small btn-view">
+                        View Planning
+                    </a>
 
                     <form th:action="@{'/jobs/' + ${job.id} + '/delete'}"
                           method="post"
                           style="display:inline; margin:0;"
                           onsubmit="return confirm('Are you sure you want to delete this job and all its instances?');">
-                        <button type="submit" class="btn-small btn-delete">Delete</button>
+
+                        <button type="submit"
+                                class="btn-small btn-delete">
+                            Delete
+                        </button>
+
                     </form>
+
                 </div>
             </td>
+
         </tr>
         </tbody>
     </table>

@@ -51,6 +51,48 @@ public class JobService {
     }
 
     @Transactional
+    public Job createScheduledJob(String name,
+                                  String description,
+                                  String frequency,
+                                  Integer interval,
+                                  LocalDateTime start,
+                                  LocalDateTime end) {
+
+        validateJob(name, frequency, interval);
+        validateScheduleDates(start, end);
+
+        Job job = new Job(
+                name.trim(),
+                description != null ? description.trim() : "",
+                frequency.toUpperCase(),
+                interval
+        );
+
+        job = jobRepository.save(job);
+
+        List<JobInstance> instances = new ArrayList<>();
+
+        LocalDateTime current = start;
+
+        while (!current.isAfter(end)) {
+
+            instances.add(
+                    new JobInstance(job, current)
+            );
+
+            current = calculateNextExecution(
+                    current,
+                    job.getFrequency(),
+                    job.getInterval()
+            );
+        }
+
+        jobInstanceRepository.saveAll(instances);
+
+        return job;
+    }
+
+    @Transactional
     public void deleteJob(Long id) {
 
         if (!jobRepository.existsById(id)) {
@@ -169,28 +211,61 @@ public class JobService {
         }
     }
 
-    private void validateSchedule(
-            Job job,
-            LocalDateTime start,
-            LocalDateTime end) {
+    private void validateSchedule(Job job,
+                                  LocalDateTime start,
+                                  LocalDateTime end) {
+
+        if (job == null) {
+            throw new IllegalArgumentException("Job cannot be null");
+        }
 
         if (start == null || end == null) {
             throw new IllegalArgumentException(
-                    "Start and end dates are required"
+                    "Start time and end time are required"
             );
         }
 
-        if (start.isAfter(end)) {
+        LocalDateTime now = LocalDateTime.now();
+
+        if (start.isBefore(now)) {
             throw new IllegalArgumentException(
-                    "Start must be before end"
+                    "Start time cannot be in the past"
             );
         }
 
-        if (job.getInterval() == null ||
-                job.getInterval() <= 0) {
+        if (!start.isBefore(end)) {
+            throw new IllegalArgumentException(
+                    "End time must be after start time"
+            );
+        }
 
+        if (job.getInterval() == null || job.getInterval() <= 0) {
             throw new IllegalArgumentException(
                     "Interval must be greater than 0"
+            );
+        }
+    }
+
+    private void validateScheduleDates(LocalDateTime start,
+                                       LocalDateTime end) {
+
+        if (start == null || end == null) {
+            throw new IllegalArgumentException(
+                    "Start time and end time are required"
+            );
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+
+        if (start.isBefore(now)) {
+            throw new IllegalArgumentException(
+                    "Start time cannot be in the past"
+            );
+        }
+
+        if (!start.isBefore(end)) {
+            throw new IllegalArgumentException(
+                    "End time must be after start time"
             );
         }
     }
