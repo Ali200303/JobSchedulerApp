@@ -1,6 +1,6 @@
 # 📅 Job Scheduler Application
 
-A full-stack web application built with **Spring Boot** that allows users to create, manage, and track scheduled jobs with automated instance generation and state management.
+A full-stack web application built with **Spring Boot** that allows users to create, manage, edit, and track scheduled jobs with automated instance generation and state management.
 
 ---
 
@@ -17,25 +17,36 @@ A full-stack web application built with **Spring Boot** that allows users to cre
 ## ✨ Key Features
 
 - 🔐 Session-based authentication system
-- 📋 Create, view, and delete jobs
-- ⏱️ Define job frequency (minutes, hours, days)
-- 🧩 Automatic generation of job instances over a defined time range
+- 📋 Create, view, edit, and delete scheduled jobs
+- ✏️ Edit job name, description, execution period, and frequency
+- 🛡️ Enforce unique job names and validate scheduling dates
+- ⏱️ Define job frequency using minutes, hours, or days
+- 🧩 Automatically generate job instances over a defined time range
+- 🔄 Regenerate future instances when a job schedule is updated while preserving execution history
 - ✔️ Manage job instance states:
   - ACTIVE
   - DONE
   - SKIPPED
-- 🔄 Restore skipped instances (when still valid)
-- 🗑️ Cascade deletion of jobs and related instances
-- 📊 Visualize job execution planning
+- ⏭️ Skip future ACTIVE instances
+- ↩️ Restore SKIPPED instances before their scheduled execution time
+- 🕒 Automatically mark expired ACTIVE instances as DONE while preserving SKIPPED history
+- 🗑️ Select and delete multiple job instances
+- 🗑️ Cascade deletion of jobs and their related instances
+- 📊 Visualize job execution planning with status-based highlighting
+- 📝 View job descriptions directly from the planning page
 
 ---
 
 ## 🧠 Highlights
 
-- Designed a **modular MVC architecture** (Controller / Service / Repository)
-- Implemented **business logic with state transitions and time validation**
-- Built **end-to-end automated tests** using BDD (Cucumber) and Selenium
-- Focused on **code structure, maintainability, and reliability**
+- Designed a **modular MVC architecture** using Controller, Service, Repository, and Model layers
+- Implemented **time-based scheduling logic** with automatic instance generation
+- Built **state management rules** for ACTIVE, DONE, and SKIPPED job instances
+- Preserved historical instances while regenerating future schedules after job updates
+- Implemented **input validation**, including unique job names and schedule date validation
+- Added interactive planning controls for **Skip, Restore, multi-selection, and deletion**
+- Built **end-to-end automated tests** using BDD with Cucumber and Selenium
+- Focused on **maintainability, separation of concerns, and reliable business logic**
 
 ---
 
@@ -53,6 +64,9 @@ Feature: Job scheduling
     When I generate job instances between "2026-04-28T10:00" and "2026-04-28T10:30"
     Then multiple job instances should be created every 5 minutes
 ```
+
+---
+
 ## ▶️ Run the Project
 
 ```bash
@@ -60,5 +74,7 @@ git clone https://github.com/Ali200303/JobSchedulerApp.git
 cd JobSchedulerApp
 mvn spring-boot:run
 ```
-Then open your browser at:  
-http://localhost:8080
+
+Then open your browser at:
+
+`http://localhost:8080`
