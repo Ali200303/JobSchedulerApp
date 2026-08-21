@@ -39,6 +39,41 @@
         .back-btn:hover {
             background: #5a6268;
         }
+
+        .description-btn {
+            padding: 8px 15px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .description-btn:hover {
+            background: #0056b3;
+        }
+
+        .description-box {
+            display: none;
+            background: #e7f3ff;
+            border-left: 4px solid #007bff;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+
+        .description-box h3 {
+            margin: 0 0 8px 0;
+            color: #333;
+        }
+
+        .description-box p {
+            margin: 0;
+            color: #555;
+            line-height: 1.5;
+        }
+
         .container {
             background: white;
             padding: 30px;
@@ -145,11 +180,33 @@
 <div class="header">
     <h1>Planning du Job: <span th:text="${jobName}"></span></h1>
     <div class="header-actions">
-        <a href="/jobs" class="back-btn">← Back to Jobs</a>
+
+        <button type="button"
+                class="description-btn"
+                id="descriptionBtn"
+                onclick="toggleDescription()">
+            View Description
+        </button>
+
+        <a href="/jobs" class="back-btn">
+            ← Back to Jobs
+        </a>
+
     </div>
 </div>
 
 <div class="container">
+
+    <div class="description-box"
+         id="descriptionBox">
+
+        <h3>Job Description</h3>
+
+        <p th:text="${job.description}">
+            No description available.
+        </p>
+
+    </div>
 
     <p class="info-text">
         💡 Select instances to delete them.
@@ -227,6 +284,31 @@
 </div>
 
 <script>
+
+    function toggleDescription() {
+
+        const descriptionBox =
+            document.getElementById('descriptionBox');
+
+        const descriptionBtn =
+            document.getElementById('descriptionBtn');
+
+        const isHidden =
+            descriptionBox.style.display === '' ||
+            descriptionBox.style.display === 'none';
+
+        if (isHidden) {
+
+            descriptionBox.style.display = 'block';
+            descriptionBtn.textContent = 'Hide Description';
+
+        } else {
+
+            descriptionBox.style.display = 'none';
+            descriptionBtn.textContent = 'View Description';
+        }
+    }
+
     const selectedIds = new Set();
 
     let selectedActionInstanceId = null;
