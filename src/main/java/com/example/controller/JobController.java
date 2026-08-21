@@ -30,11 +30,20 @@ public class JobController {
     @GetMapping
     public String showJobsPage(HttpSession session, Model model) {
 
-        if (!isLoggedIn(session)) return "redirect:/login";
+        if (!isLoggedIn(session)) {
+            return "redirect:/login";
+        }
 
-        jobService.initializeSampleData();
-        model.addAttribute("jobs", jobService.getAllJobs());
-        model.addAttribute("username", session.getAttribute("loggedInUser"));
+        model.addAttribute(
+                "jobs",
+                jobService.getAllJobs()
+        );
+
+        model.addAttribute(
+                "username",
+                session.getAttribute("loggedInUser")
+        );
+
         return "jobs";
     }
 
@@ -45,17 +54,40 @@ public class JobController {
         return "create-job";
     }
 
-    @GetMapping("/{id}/planning")
-    public String showPlanning(@PathVariable Long id, Model model, HttpSession session) {
+    @GetMapping("/{id}/edit")
+    public String showEditJobForm(@PathVariable Long id,
+                                  Model model,
+                                  HttpSession session) {
 
-        if (!isLoggedIn(session)) return "redirect:/login";
+        if (!isLoggedIn(session)) {
+            return "redirect:/login";
+        }
 
         Job job = jobService.getJobById(id);
-        List<JobInstance> instances = jobInstanceService.getInstancesForJob(id);
+
+        model.addAttribute("job", job);
+
+        return "edit-job";
+    }
+
+    @GetMapping("/{id}/planning")
+    public String showPlanning(@PathVariable Long id,
+                               Model model,
+                               HttpSession session) {
+
+        if (!isLoggedIn(session)) {
+            return "redirect:/login";
+        }
+
+        Job job = jobService.getJobById(id);
+
+        List<JobInstance> instances =
+                jobInstanceService.getInstancesForJob(id);
 
         model.addAttribute("job", job);
         model.addAttribute("jobId", id);
         model.addAttribute("jobName", job.getName());
+        model.addAttribute("jobDescription", job.getDescription());
         model.addAttribute("instances", instances);
 
         return "job-planning";
@@ -92,6 +124,39 @@ public class JobController {
 
         if (!isLoggedIn(session)) return "redirect:/login";
         jobService.deleteJob(id);
+        return "redirect:/jobs";
+    }
+
+    @PostMapping("/{id}/edit")
+    public String updateJob(@PathVariable Long id,
+                            @RequestParam String name,
+                            @RequestParam String description,
+                            @RequestParam String frequency,
+                            @RequestParam Integer interval,
+                            @RequestParam String startTime,
+                            @RequestParam String endTime,
+                            HttpSession session) {
+
+        if (!isLoggedIn(session)) {
+            return "redirect:/login";
+        }
+
+        LocalDateTime start =
+                LocalDateTime.parse(startTime);
+
+        LocalDateTime end =
+                LocalDateTime.parse(endTime);
+
+        jobService.updateJob(
+                id,
+                name,
+                description,
+                frequency,
+                interval,
+                start,
+                end
+        );
+
         return "redirect:/jobs";
     }
 

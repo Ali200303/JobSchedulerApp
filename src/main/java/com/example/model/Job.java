@@ -17,15 +17,37 @@ public class Job {
     private LocalDateTime createdAt;
     private LocalDateTime lastExecuted;
     private String status; // "ACTIVE", "PAUSED", "STOPPED"
+    private LocalDateTime startTime;
+    private LocalDateTime endTime;
 
     public Job() {}
 
-    public Job(String name, String description, String frequency, Integer interval) {
+    public Job(String name,
+               String description,
+               String frequency,
+               Integer interval) {
 
         this.name = name;
         this.description = description;
         this.frequency = frequency;
         this.intervalMinutes = interval;
+        this.createdAt = LocalDateTime.now();
+        this.status = "ACTIVE";
+    }
+
+    public Job(String name,
+               String description,
+               String frequency,
+               Integer interval,
+               LocalDateTime startTime,
+               LocalDateTime endTime) {
+
+        this.name = name;
+        this.description = description;
+        this.frequency = frequency;
+        this.intervalMinutes = interval;
+        this.startTime = startTime;
+        this.endTime = endTime;
         this.createdAt = LocalDateTime.now();
         this.status = "ACTIVE";
     }
@@ -56,6 +78,22 @@ public class Job {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public LocalDateTime getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(LocalDateTime startTime) {
+        this.startTime = startTime;
+    }
+
+    public LocalDateTime getEndTime() {
+        return endTime;
+    }
+
+    public void setEndTime(LocalDateTime endTime) {
+        this.endTime = endTime;
+    }
 
     public LocalDateTime getLastExecuted() { return lastExecuted; }
     public void setLastExecuted(LocalDateTime lastExecuted) { this.lastExecuted = lastExecuted; }

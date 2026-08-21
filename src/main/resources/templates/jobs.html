@@ -29,6 +29,14 @@
         .btn-view:hover { background: #0056b3; }
         .btn-delete { background: #dc3545; color: white; }
         .btn-delete:hover { background: #c82333; }
+        .btn-edit {
+            background: #ff9800;
+            color: white;
+        }
+
+        .btn-edit:hover {
+            background: #e68900;
+        }
         .no-jobs { text-align: center; padding: 40px; color: #666; }
         .frequency-info { font-size: 14px; color: #666; }
     </style>
@@ -96,6 +104,11 @@
                     <a th:href="@{'/jobs/' + ${job.id} + '/planning'}"
                        class="btn-small btn-view">
                         View Planning
+                    </a>
+
+                    <a th:href="@{'/jobs/' + ${job.id} + '/edit'}"
+                       class="btn-small btn-edit">
+                        Edit
                     </a>
 
                     <form th:action="@{'/jobs/' + ${job.id} + '/delete'}"

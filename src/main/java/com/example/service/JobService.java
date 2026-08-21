@@ -33,23 +33,6 @@ public class JobService {
                         new IllegalArgumentException("Job not found: " + id));
     }
 
-    public Job createJob(String name,
-                         String description,
-                         String frequency,
-                         Integer interval) {
-
-        validateJob(name, frequency, interval);
-
-        Job job = new Job(
-                name.trim(),
-                description != null ? description.trim() : "",
-                frequency.toUpperCase(),
-                interval
-        );
-
-        return jobRepository.save(job);
-    }
-
     @Transactional
     public Job createScheduledJob(String name,
                                   String description,
@@ -59,13 +42,16 @@ public class JobService {
                                   LocalDateTime end) {
 
         validateJob(name, frequency, interval);
+        validateUniqueJobName(name);
         validateScheduleDates(start, end);
 
         Job job = new Job(
                 name.trim(),
                 description != null ? description.trim() : "",
                 frequency.toUpperCase(),
-                interval
+                interval,
+                start,
+                end
         );
 
         job = jobRepository.save(job);
@@ -93,6 +79,84 @@ public class JobService {
     }
 
     @Transactional
+    public Job updateJob(Long jobId,
+                         String name,
+                         String description,
+                         String frequency,
+                         Integer interval,
+                         LocalDateTime start,
+                         LocalDateTime end) {
+
+        Job job = getJobById(jobId);
+
+        validateJob(name, frequency, interval);
+        validateUniqueJobNameForUpdate(name, jobId);
+        validateUpdatedScheduleDates(start, end);
+
+        job.setName(name.trim());
+
+        job.setDescription(
+                description != null
+                        ? description.trim()
+                        : ""
+        );
+
+        job.setFrequency(frequency.toUpperCase());
+        job.setInterval(interval);
+        job.setStartTime(start);
+        job.setEndTime(end);
+
+        LocalDateTime now = LocalDateTime.now();
+
+        /*
+         * Preserve historical instances.
+         * Only future instances are regenerated.
+         */
+        jobInstanceRepository
+                .deleteByJob_IdAndScheduledTimeAfter(
+                        jobId,
+                        now
+                );
+
+        /*
+         * If the edited start date is already in the past,
+         * start generating from the next execution after now.
+         */
+        LocalDateTime current = start;
+
+        while (!current.isAfter(now)) {
+
+            current = calculateNextExecution(
+                    current,
+                    job.getFrequency(),
+                    job.getInterval()
+            );
+        }
+
+        List<JobInstance> newInstances =
+                new ArrayList<>();
+
+        while (!current.isAfter(end)) {
+
+            newInstances.add(
+                    new JobInstance(job, current)
+            );
+
+            current = calculateNextExecution(
+                    current,
+                    job.getFrequency(),
+                    job.getInterval()
+            );
+        }
+
+        if (!newInstances.isEmpty()) {
+            jobInstanceRepository.saveAll(newInstances);
+        }
+
+        return job;
+    }
+
+    @Transactional
     public void deleteJob(Long id) {
 
         if (!jobRepository.existsById(id)) {
@@ -101,6 +165,27 @@ public class JobService {
 
         jobInstanceRepository.deleteByJob_Id(id);
         jobRepository.deleteById(id);
+    }
+
+    private void validateUniqueJobName(String name) {
+
+        if (jobRepository.existsByNameIgnoreCase(name.trim())) {
+            throw new IllegalArgumentException(
+                    "A job with this name already exists"
+            );
+        }
+    }
+
+    private void validateUniqueJobNameForUpdate(String name, Long jobId) {
+
+        if (jobRepository.existsByNameIgnoreCaseAndIdNot(
+                name.trim(),
+                jobId
+        )) {
+            throw new IllegalArgumentException(
+                    "A job with this name already exists"
+            );
+        }
     }
 
     @Transactional
@@ -270,29 +355,24 @@ public class JobService {
         }
     }
 
-    public void initializeSampleData() {
+    private void validateUpdatedScheduleDates(LocalDateTime start,
+                                              LocalDateTime end) {
 
-        if (jobRepository.count() == 0) {
-
-            createJob(
-                    "Backup Database",
-                    "Daily database backup",
-                    "HOURS",
-                    24
+        if (start == null || end == null) {
+            throw new IllegalArgumentException(
+                    "Start time and end time are required"
             );
+        }
 
-            createJob(
-                    "Send Reports",
-                    "Email weekly reports",
-                    "DAYS",
-                    7
+        if (!start.isBefore(end)) {
+            throw new IllegalArgumentException(
+                    "End time must be after start time"
             );
+        }
 
-            createJob(
-                    "Clean Temp Files",
-                    "Clear temporary files",
-                    "MINUTES",
-                    5
+        if (end.isBefore(LocalDateTime.now())) {
+            throw new IllegalArgumentException(
+                    "End time cannot be in the past"
             );
         }
     }
