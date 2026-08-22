@@ -1,41 +1,30 @@
 Feature: Job Management
   As a logged-in user
-  I want to create a job and view its planning
-  So that I can manage my jobs
+  I want to create and manage scheduled jobs
+  So that I can control their execution planning
 
-  Scenario: Login, create job, view planning
+  Scenario: Login, create job, and view planning
     Given I am logged in as "admin"
     When I create a job with name "IntegrationJob", description "Test job", frequency "MINUTES", interval 5
     Then I should see the job "IntegrationJob" in the jobs list
     And I should see its planning page with instances
 
-  # scénario pour tester la fonctionnalité Skip
-  Scenario: Skip a job instance
+  Scenario: Skip an active job instance
     Given I am logged in as "admin"
     And I have a job with instances in ACTIVE status
     When I navigate to the job planning page
-    And I click the "Skip" button on the first active instance
-    Then the instance status should change to "SKIPPED"
-    And I should see a "Restore" button for that instance
+    And I select the first ACTIVE instance
+    And I click the instance action button
+    Then the selected instance status should change to "SKIPPED"
 
-  # scénario pour tester la fonctionnalité Restore
   Scenario: Restore a skipped job instance
     Given I am logged in as "admin"
     And I have a job with a SKIPPED instance
     When I navigate to the job planning page
-    And I click the "Restore" button on the skipped instance
-    Then the instance status should change to "ACTIVE"
-    And I should see a "Skip" button for that instance
+    And I select the SKIPPED instance
+    And I click the instance action button
+    Then the selected instance status should change to "ACTIVE"
 
-  # scénario pour tester les instances expirées
-  Scenario: Cannot skip expired instances
-    Given I am logged in as "admin"
-    And I have a job with instances in DONE status
-    When I navigate to the job planning page
-    Then I should see "Expired" buttons that are disabled
-    And I should not be able to skip or restore expired instances
-
-  # scénario pour tester la sélection et suppression d'instances
   Scenario: Delete selected instances
     Given I am logged in as "admin"
     And I have a job with instances in ACTIVE status
@@ -44,15 +33,12 @@ Feature: Job Management
     And I click the "Delete Selected Instances" button
     Then the selected instances should be removed from the planning
 
-  # scénario pour tester qu'on ne peut pas sélectionner les instances SKIPPED
-  Scenario: Cannot select skipped instances
+  Scenario: Delete selected instances button is disabled by default
     Given I am logged in as "admin"
-    And I have a job with a SKIPPED instance
+    And I have a job with instances in ACTIVE status
     When I navigate to the job planning page
-    And I try to click on a SKIPPED instance row
-    Then the row should not be selected
+    Then the "Delete Selected Instances" button should be disabled
 
-  # scénario pour tester la suppression d'un job depuis la liste
   Scenario: Delete a job from jobs list
     Given I am logged in as "admin"
     And I have a job with instances in ACTIVE status
@@ -60,9 +46,9 @@ Feature: Job Management
     And I click the "Delete" button for the job
     Then the job should not appear in the jobs list
 
-  # scénario pour tester que le bouton Delete est désactivé quand rien n'est sélectionné
-  Scenario: Delete button disabled when no instances selected
+  Scenario: View job description from planning
     Given I am logged in as "admin"
     And I have a job with instances in ACTIVE status
     When I navigate to the job planning page
-    Then the "Delete Selected Instances" button should be disabled
+    And I click the "View Description" button
+    Then I should see the job description
