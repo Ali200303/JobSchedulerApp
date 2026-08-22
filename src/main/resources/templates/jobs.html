@@ -39,6 +39,25 @@
         }
         .no-jobs { text-align: center; padding: 40px; color: #666; }
         .frequency-info { font-size: 14px; color: #666; }
+        .search-section {
+            margin: 20px 0;
+        }
+
+        .search-input {
+            width: 100%;
+            max-width: 400px;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #007bff;
+        }
     </style>
 </head>
 <body>
@@ -61,6 +80,14 @@
 
     <div th:if="${#lists.isEmpty(jobs)}" class="no-jobs">
         <p>No jobs scheduled yet. Click "Create New Job" to get started!</p>
+    </div>
+
+    <div class="search-section">
+        <input type="text"
+               id="jobSearch"
+               class="search-input"
+               placeholder="🔎 Search jobs by name or description..."
+               oninput="filterJobs()">
     </div>
 
     <table th:if="${!#lists.isEmpty(jobs)}" class="jobs-table" id="jobsTable">
@@ -130,5 +157,36 @@
         </tbody>
     </table>
 </div>
+<script>
+    function filterJobs() {
+
+        const searchValue = document
+            .getElementById('jobSearch')
+            .value
+            .toLowerCase()
+            .trim();
+
+        const rows = document.querySelectorAll('#jobsTable tbody tr');
+
+        rows.forEach(row => {
+
+            const jobName = row
+                .querySelector('td:nth-child(1)')
+                .textContent
+                .toLowerCase();
+
+            const description = row
+                .querySelector('td:nth-child(2)')
+                .textContent
+                .toLowerCase();
+
+            const matchesSearch =
+                jobName.includes(searchValue) ||
+                description.includes(searchValue);
+
+            row.style.display = matchesSearch ? '' : 'none';
+        });
+    }
+</script>
 </body>
 </html>
