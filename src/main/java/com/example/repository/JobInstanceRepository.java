@@ -21,4 +21,8 @@ public interface JobInstanceRepository extends JpaRepository<JobInstance, Long> 
             LocalDateTime scheduledTime
     );
 
+    boolean existsByJob_IdAndScheduledTimeAfter(
+            Long jobId,
+            LocalDateTime scheduledTime
+    );
 }

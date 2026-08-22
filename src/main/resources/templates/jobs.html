@@ -21,6 +21,7 @@
         .jobs-table th { background-color: #f8f9fa; font-weight: bold; color: #333; }
         .status-badge { padding: 5px 10px; border-radius: 15px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
         .status-active { background: #e8f5e8; color: #2e7d32; }
+        .status-inactive {background: #e2e3e5;color: #495057; }
         .status-skipped { background: #fff3cd; color: #856404; }
         .status-done { background: #f8d7da; color: #721c24; }
         .action-buttons { display: flex; gap: 10px; }
@@ -40,7 +41,51 @@
         .no-jobs { text-align: center; padding: 40px; color: #666; }
         .frequency-info { font-size: 14px; color: #666; }
         .search-section {
-            margin: 20px 0;
+            margin: 20px 0 10px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .filter-btn {
+            padding: 12px 18px;
+            border: none;
+            border-radius: 6px;
+            background: #007bff;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .filter-btn:hover {
+            background: #0056b3;
+        }
+
+        .filter-panel {
+            display: none;
+            gap: 10px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+
+        .filter-panel.visible {
+            display: flex;
+        }
+
+        .filter-select {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            background: white;
+        }
+
+        .clear-filter-btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            background: #6c757d;
+            color: white;
+            cursor: pointer;
         }
 
         .search-input {
@@ -88,6 +133,38 @@
                class="search-input"
                placeholder="🔎 Search jobs by name or description..."
                oninput="filterJobs()">
+        <button type="button"
+                class="filter-btn"
+                onclick="toggleFilters()">
+            ⚙ Filter
+        </button>
+    </div>
+
+    <div id="filterPanel" class="filter-panel">
+
+        <select id="statusFilter"
+                class="filter-select"
+                onchange="filterJobs()">
+            <option value="">All Statuses</option>
+            <option value="ACTIVE">ACTIVE</option>
+            <option value="INACTIVE">INACTIVE</option>
+        </select>
+
+        <select id="frequencyFilter"
+                class="filter-select"
+                onchange="filterJobs()">
+            <option value="">All Frequencies</option>
+            <option value="MINUTES">Minutes</option>
+            <option value="HOURS">Hours</option>
+            <option value="DAYS">Days</option>
+        </select>
+
+        <button type="button"
+                class="clear-filter-btn"
+                onclick="clearFilters()">
+            Clear Filters
+        </button>
+
     </div>
 
     <table th:if="${!#lists.isEmpty(jobs)}" class="jobs-table" id="jobsTable">
@@ -102,8 +179,10 @@
         </tr>
         </thead>
         <tbody>
-        <tr th:each="job : ${jobs}" th:id="'job-' + ${job.id}">
-
+        <tr th:each="job : ${jobs}"
+            th:id="'job-' + ${job.id}"
+            th:data-status="${job.status}"
+            th:data-frequency="${job.frequency}">
             <td>
                 <strong th:text="${job.name}"></strong>
             </td>
@@ -166,7 +245,14 @@
             .toLowerCase()
             .trim();
 
-        const rows = document.querySelectorAll('#jobsTable tbody tr');
+        const selectedStatus =
+            document.getElementById('statusFilter').value;
+
+        const selectedFrequency =
+            document.getElementById('frequencyFilter').value;
+
+        const rows =
+            document.querySelectorAll('#jobsTable tbody tr');
 
         rows.forEach(row => {
 
@@ -180,12 +266,45 @@
                 .textContent
                 .toLowerCase();
 
+            const status =
+                row.getAttribute('data-status');
+
+            const frequency =
+                row.getAttribute('data-frequency');
+
             const matchesSearch =
                 jobName.includes(searchValue) ||
                 description.includes(searchValue);
 
-            row.style.display = matchesSearch ? '' : 'none';
+            const matchesStatus =
+                selectedStatus === '' ||
+                status === selectedStatus;
+
+            const matchesFrequency =
+                selectedFrequency === '' ||
+                frequency === selectedFrequency;
+
+            row.style.display =
+                matchesSearch &&
+                matchesStatus &&
+                matchesFrequency
+                    ? ''
+                    : 'none';
         });
+    }
+
+    function toggleFilters() {
+        document
+            .getElementById('filterPanel')
+            .classList.toggle('visible');
+    }
+
+    function clearFilters() {
+
+        document.getElementById('statusFilter').value = '';
+        document.getElementById('frequencyFilter').value = '';
+
+        filterJobs();
     }
 </script>
 </body>

@@ -23,8 +23,30 @@ public class JobService {
         this.jobInstanceRepository = jobInstanceRepository;
     }
 
+    @Transactional
     public List<Job> getAllJobs() {
-        return jobRepository.findAll();
+
+        List<Job> jobs = jobRepository.findAll();
+
+        LocalDateTime now = LocalDateTime.now();
+
+        for (Job job : jobs) {
+
+            boolean hasFutureInstances =
+                    jobInstanceRepository
+                            .existsByJob_IdAndScheduledTimeAfter(
+                                    job.getId(),
+                                    now
+                            );
+
+            if (hasFutureInstances) {
+                job.setStatus("ACTIVE");
+            } else {
+                job.setStatus("INACTIVE");
+            }
+        }
+
+        return jobs;
     }
 
     public Job getJobById(Long id) {
