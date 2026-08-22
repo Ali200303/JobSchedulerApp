@@ -23,6 +23,11 @@ A full-stack web application built with **Spring Boot** that allows users to cre
 - ⏱️ Define job frequency using minutes, hours, or days
 - 🧩 Automatically generate job instances over a defined time range
 - 🔄 Regenerate future instances when a job schedule is updated while preserving execution history
+- 🔎 Search jobs by name or description
+- ⚙️ Filter jobs by status and scheduling frequency
+- 🔀 Combine search and filters for more precise job discovery
+- 🟢 Automatically keep jobs ACTIVE while future instances remain
+- ⚪ Automatically mark jobs INACTIVE when no future instances remain
 - ✔️ Manage job instance states:
   - ACTIVE
   - DONE
@@ -42,9 +47,11 @@ A full-stack web application built with **Spring Boot** that allows users to cre
 - Designed a **modular MVC architecture** using Controller, Service, Repository, and Model layers
 - Implemented **time-based scheduling logic** with automatic instance generation
 - Built **state management rules** for ACTIVE, DONE, and SKIPPED job instances
+- Implemented automatic **ACTIVE/INACTIVE job lifecycle management** based on remaining future instances
 - Preserved historical instances while regenerating future schedules after job updates
 - Implemented **input validation**, including unique job names and schedule date validation
 - Added interactive planning controls for **Skip, Restore, multi-selection, and deletion**
+- Implemented **job search and dynamic filtering** by status and scheduling frequency
 - Built **end-to-end automated tests** using BDD with Cucumber and Selenium
 - Focused on **maintainability, separation of concerns, and reliable business logic**
 
@@ -75,6 +82,4 @@ cd JobSchedulerApp
 mvn spring-boot:run
 ```
 
-Then open your browser at:
-
-`http://localhost:8080`
+Then open your browser at: `http://localhost:8080`
